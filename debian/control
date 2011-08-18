@@ -2,7 +2,7 @@ Source: eyed3
 Section: sound
 Priority: optional
 Maintainer: Alexander Wirt <formorer@debian.org>
-Build-Depends: debhelper (>= 8), dpatch
+Build-Depends: debhelper (>= 8)
 Build-Depends-Indep: python (>= 2.6.6-3~)
 Homepage: http://eyed3.nicfit.net/
 Standards-Version: 3.9.2
