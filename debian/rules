@@ -5,7 +5,14 @@
 
 override_dh_clean:
 	-rm config.log
-	-rm config.status
+	-rm config.guess 
+	-rm config.sub
+	-rm config.status 
+	-rm doc/eyeD3.1 
+	-rm etc/eyeD3.spec 
+	-rm Makefile 
+	-rm setup.py 
+	-rm src/eyeD3/__init__.py
 	dh_clean
 
 override_dh_install:
