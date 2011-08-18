@@ -27,5 +27,5 @@ Depends: python-eyed3 (= ${source:Version}), ${python:Depends},
 Description: Display and manipulate id3-tags on the command-line
  A command-line editor to add/edit/remove ID3-tags on mp3 files.
  It supports version 1.0,1.1,2.3 and 2.4 of the ID3 standard.
- Additionally it displays several informations about the file 
+ Additionally it displays several information about the file 
  such as length and bitrate from an MP3 file.
