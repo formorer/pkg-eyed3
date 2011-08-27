@@ -1,3 +1,14 @@
+eyed3 (0.6.17-2) unstable; urgency=low
+
+  * [67b9697] Convert packgaging to dh_python2.
+    Thanks to Dan Chen for the patch (Closes: #638266)
+  * [1a0efb4] Bump standards version (no changes)
+  * [41eece1] Bump dh compat to 8
+  * [240e3a1] Remove dpatch dependency
+  * [6d7ba30] Remove obsolete patches/ directory
+
+ -- Alexander Wirt <formorer@debian.org>  Sat, 27 Aug 2011 08:17:06 +0200
+
 eyed3 (0.6.17-1) unstable; urgency=low
 
   * New upstream version
