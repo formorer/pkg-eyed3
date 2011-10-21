@@ -1,7 +1,10 @@
 #!/usr/bin/make -f
 
+# Include dpatch stuff.
+include /usr/share/dpatch/dpatch.make
+
 %:
-	dh $@ --with python2
+	dh $@ --with python2,dpatch
 
 override_dh_clean:
 	-rm config.log
