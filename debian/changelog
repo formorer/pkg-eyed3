@@ -1,3 +1,12 @@
+eyed3 (0.6.17-3) unstable; urgency=low
+
+  * [0f7fbec] Fix override disparity
+  * [86227a7] Readd modern dpatch support
+  * [553d3f2] don't crash on empty bpm tags.
+    Thanks to Dave Holland for the patch (Closes: #646161)
+
+ -- Alexander Wirt <formorer@debian.org>  Fri, 21 Oct 2011 22:55:15 +0200
+
 eyed3 (0.6.17-2) unstable; urgency=low
 
   * [67b9697] Convert packgaging to dh_python2.
