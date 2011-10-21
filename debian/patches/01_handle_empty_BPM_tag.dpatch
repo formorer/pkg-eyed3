@@ -1,0 +1,21 @@
+#! /bin/sh /usr/share/dpatch/dpatch-run
+## 01_handle_empty_BPM_tag.dpatch by Dave Holland
+##
+## DP: Description: Handle empty BPM tag that would normally cause an exception.
+## DP: Forwarded: Yes
+## DP: Author: Dave Holland
+## DP: Origin: Dave Holland
+
+@DPATCH@
+diff -urNad '--exclude=CVS' '--exclude=.svn' '--exclude=.git' '--exclude=.arch' '--exclude=.hg' '--exclude=_darcs' '--exclude=.bzr' pkg-eyed3~/src/eyeD3/tag.py pkg-eyed3/src/eyeD3/tag.py
+--- pkg-eyed3~/src/eyeD3/tag.py	2011-08-18 07:55:56.000000000 +0200
++++ pkg-eyed3/src/eyeD3/tag.py	2011-10-21 21:52:39.766391238 +0200
+@@ -983,6 +983,8 @@
+       bpm = self.frames[BPM_FID];
+       if bpm:
+           # Round floats since the spec says this is an integer
++          if(bpm[0].text == ''):
++              return None;
+           bpm = int(float(bpm[0].text) + 0.5)
+           return bpm
+       else:
