@@ -17,7 +17,6 @@
 #
 ################################################################################
 import re, os, string, stat, shutil, tempfile, binascii;
-import mimetypes;
 from stat import *;
 from eyeD3 import *;
 import eyeD3.utils;
@@ -25,6 +24,7 @@ import eyeD3.mp3;
 from frames import *;
 from binfuncs import *;
 import math;
+from xml.sax.saxutils import escape
 
 ID3_V1_COMMENT_DESC = "ID3 v1 Comment";
 
@@ -670,7 +670,7 @@ class Tag:
       return self._getNum(TRACKNUM_FID)
 
    # Like TrackNum, except for DiscNum--that is, position in a set. Most
-   # songs won't have this or it will be 1/1.
+   # tags won't have this or it will be 1/1.
    def getDiscNum(self):
       return self._getNum(DISCNUM_FID)
 
@@ -882,11 +882,11 @@ class Tag:
    # Semantics similar to addComment
    def addUserTextFrame(self, desc, text):
       if not text:
-         u_frames = self.frames[USERTEXT_FID];
+         u_frames = self.frames[USERTEXT_FID]
          for u in u_frames:
             if u.description == desc:
                self.frames.remove(u);
-               break;
+               break
       else:
          self.frames.setUserTextFrame(self.strToUnicode(text),
                                       self.strToUnicode(desc), self.encoding);
@@ -982,9 +982,14 @@ class Tag:
    def getBPM(self):
       bpm = self.frames[BPM_FID];
       if bpm:
-          # Round floats since the spec says this is an integer
-          bpm = int(float(bpm[0].text) + 0.5)
-          return bpm
+          try:
+              bpm = float(bpm[0].text)
+          except ValueError:
+              # Invalid bpm value, in the spirit of not crashing...
+              bpm = 0.0
+          finally:
+              # Round floats since the spec says this is an integer
+              return int(round(bpm))
       else:
           return None;
 
@@ -1030,16 +1035,16 @@ class Tag:
    def setTextEncoding(self, enc):
        if enc != LATIN1_ENCODING and enc != UTF_16_ENCODING and\
           enc != UTF_16BE_ENCODING and enc != UTF_8_ENCODING:
-           raise TagException("Invalid encoding");
+           raise TagException("Invalid encoding")
        elif self.getVersion() & ID3_V1 and enc != LATIN1_ENCODING:
-           raise TagException("ID3 v1.x supports ISO-8859 encoding only");
+           raise TagException("ID3 v1.x supports ISO-8859 encoding only")
        elif self.getVersion() <= ID3_V2_3 and enc == UTF_8_ENCODING:
            # This is unfortunate.
-           raise TagException("UTF-8 is not supported by ID3 v2.3");
+           raise TagException("UTF-8 is not supported by ID3 v2.3")
 
-       self.encoding = enc;
+       self.encoding = enc
        for f in self.frames:
-           f.encoding = enc;
+           f.encoding = enc
 
    def tagToString(self, pattern):
        # %A - artist
@@ -1047,23 +1052,27 @@ class Tag:
        # %t - title
        # %n - track number
        # %N - track total
-       s = self._subst(pattern, "%A", self.getArtist());
-       s = self._subst(s, "%a", self.getAlbum());
-       s = self._subst(s, "%t", self.getTitle());
-       s = self._subst(s, "%n", self._prettyTrack(self.getTrackNum()[0]));
-       s = self._subst(s, "%N", self._prettyTrack(self.getTrackNum()[1]));
-       return s;
+       # %Y - year 
+       # %G - genre
+       s = self._subst(pattern, "%A", self.getArtist())
+       s = self._subst(s, "%a", self.getAlbum())
+       s = self._subst(s, "%t", self.getTitle())
+       s = self._subst(s, "%n", self._prettyTrack(self.getTrackNum()[0]))
+       s = self._subst(s, "%N", self._prettyTrack(self.getTrackNum()[1]))
+       s = self._subst(s, "%Y", self.getYear())
+       s = self._subst(s, "%G", self.getGenre().name)
+       return s
 
    def _prettyTrack(self, track):
        if not track:
-           return None;
-       track_str = str(track);
+           return None
+       track_str = str(track)
        if len(track_str) == 1:
-           track_str = "0" + track_str;
-       return track_str;
+           track_str = "0" + track_str
+       return track_str
 
    def _subst(self, name, pattern, repl):
-       regex = re.compile(pattern);
+       regex = re.compile(pattern)
        if regex.search(name) and repl:
            # No '/' characters allowed
            (repl, subs) = re.compile("/").subn("-", repl);
@@ -1459,8 +1468,9 @@ class Genre:
 
       try:
          id = genres[name];
-         # Get titled case.
-         name = genres[id];
+         if (not utils.itunesCompat()) or (id <= GenreMap.ITUNES_GENRE_MAX):
+            # Get titled case.
+            name = genres[id];
       except:
           if utils.strictID3():
               raise GenreException("Invalid genre name: " + name);
@@ -1543,16 +1553,33 @@ class Genre:
 
       # Non standard, but witnessed.
       # Match genre alone. e.g. Rap, Rock, blues, 'Rock|Punk|Pop-Punk', etc
+      '''
       regex = re.compile("^[A-Z 0-9+/\-\|!&'\.]+\00*$", re.IGNORECASE)
       if regex.match(genreStr):
+         print "boo"
          self.setName(genreStr);
          return;
+     '''
+
+      # non standard, but witnessed. 
+      # Match delimited-separated list of genres alone.
+      # e.g. 'breaks, electronic', 'hardcore|nyhc' 
+      regex = re.compile(
+              r"^([A-Z 0-9+/\-\|!&'\.]+)([,;|][A-Z 0-9+/\-\|!&'\.]+)*$",
+              re.IGNORECASE)
+      if regex.match(genreStr):
+         print "boo"
+         self.setName(genreStr);
+         return;
+
       raise GenreException("Genre string cannot be parsed with '%s': %s" %\
                            (regex.pattern, genreStr));
 
    def __str__(self):
       s = "";
-      if self.id != None:
+      if (self.id != None and
+              ((not utils.itunesCompat()) or
+               (self.id <= GenreMap.ITUNES_GENRE_MAX))):
          s += "(" + str(self.id) + ")"
       if self.name:
          s += self.name;
@@ -1588,6 +1615,11 @@ class TagFile:
        if not dir:
            dir = ".";
        new_name = dir + os.sep + name.encode(fsencoding) + base_ext;
+
+       if os.path.exists(new_name):
+           raise TagException("File '%s' exists, eyeD3 will not overwrite it" %
+                              new_name)
+
        try:
            os.rename(self.fileName, new_name);
            self.fileName = new_name;
@@ -1700,7 +1732,7 @@ class Mp3AudioFile(TagFile):
 
 ################################################################################
 def isMp3File(fileName):
-    (type, enc) = mimetypes.guess_type(fileName);
+    type = eyeD3.utils.guess_mime_type(fileName);
     return type == "audio/mpeg";
 
 ################################################################################
@@ -1712,6 +1744,7 @@ class GenreMap(list):
    ID3_GENRE_MAX = 79;
    WINAMP_GENRE_MIN = 80;
    WINAMP_GENRE_MAX = 147;
+   ITUNES_GENRE_MAX = 125;
    EYED3_GENRE_MIN = None;
    EYED3_GENRE_MAX = None;
 
@@ -1925,21 +1958,45 @@ def tagToUserTune(tag):
         audio_file = tag;
         tag = audio_file.getTag();
 
-    tune =  u"<tune xmlns='http://jabber.org/protocol/tune'>\n";
-    if tag.getArtist():
-        tune += "  <artist>" + tag.getArtist() + "</artist>\n";
-    if tag.getTitle():
-        tune += "  <title>" + tag.getTitle() + "</title>\n";
-    if tag.getAlbum():
-        tune += "  <source>" + tag.getAlbum() + "</source>\n";
-    tune += "  <track>" +\
-            "file://" + unicode(os.path.abspath(tag.linkedFile.name)) +\
-            "</track>\n";
+    tune =  [u"<tune xmlns='http://jabber.org/protocol/tune'>\n"]
+    def add(name, value):
+        if value:
+            value = escape(value)
+            tune.append('  <%s>%s</%s>\n' % (name, value, name))
+  
+    add('artist', tag.getArtist())
+    add('title', tag.getTitle())
+    add('source', tag.getAlbum())
+    add('track', "file://" + unicode(os.path.abspath(tag.linkedFile.name)))
     if audio_file:
-        tune += "  <length>" + unicode(audio_file.getPlayTime()) +\
-                "</length>\n";
-    tune += "</tune>\n";
-    return tune;
+        add('length', unicode(audio_file.getPlayTime()))
+    tune.append("</tune>\n")
+    return ''.join(tune)
+
+def tagToRfc822(tag):
+    if isinstance(tag, Mp3AudioFile):
+        tag = tag.getTag();
+    lines = []
+    def add(name, value):
+        if value:
+            lines.append(u'%s: %s\n' % (name, value))
+    add('Filename', tag.linkedFile.name)
+    add('Artist', tag.getArtist())
+    add('Album', tag.getAlbum())
+    for comment in tag.getComments():
+        add('Comment', comment.comment)
+    try:
+        g = tag.getGenre()
+        if g:
+            add('Genre', '%s (%s)' % (g.getName(), g.getId() or 0))
+    except GenreException:
+        pass
+    add('Title', tag.getTitle())
+    tn, tt = tag.getTrackNum()
+    add('Track', tn)
+    add('Year', tag.getYear())
+    return ''.join(lines)
+
 
 #
 # Module level globals.

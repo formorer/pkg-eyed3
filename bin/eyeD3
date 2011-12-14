@@ -100,7 +100,7 @@ class OptionParserHelpFormatter(HelpFormatter):
 ################################################################################
 def getOptionParser():
    versionStr = \
-"""eyeD3 %s (C) Copyright 2002-2008 %s
+"""eyeD3 %s (C) Copyright 2002-2011 %s
 This program comes with ABSOLUTELY NO WARRANTY! See COPYING for details.
 Run with --help/-h for usage information or see the man page 'eyeD3(1)'
 """ % (eyeD3.eyeD3Version, eyeD3.eyeD3Maintainer)
@@ -124,19 +124,19 @@ Run with --help/-h for usage information or see the man page 'eyeD3(1)'
                        default=eyeD3.ID3_ANY_VERSION,
                        help="Only read/write ID3 v2.x tags.");
    versOpts.add_option("--to-v1.1", action="store_const",
-                       const=eyeD3.ID3_V1_1, dest="convertVersion",
+                       const=eyeD3.ID3_V1_1, dest="convert_version",
                        default=0,
-                       help="Convert the file's tag to ID3 v1.1."\
-                            " (Or 1.0 if there is no track number.)");
+                       help="Convert the file's tag to ID3 v1.1."
+                            " (Or 1.0 if there is no track number.)")
    versOpts.add_option("--to-v2.3", action="store_const",
-                       const=eyeD3.ID3_V2_3, dest="convertVersion",
+                       const=eyeD3.ID3_V2_3, dest="convert_version",
                        default=0,
-                       help="Convert the file's tag to ID3 v2.3");
+                       help="Convert the file's tag to ID3 v2.3")
    versOpts.add_option("--to-v2.4", action="store_const",
-                       const=eyeD3.ID3_V2_4, dest="convertVersion",
+                       const=eyeD3.ID3_V2_4, dest="convert_version",
                        default=0,
-                       help="Convert the file's tag to ID3 v2.4");
-   optParser.add_option_group(versOpts);
+                       help="Convert the file's tag to ID3 v2.4")
+   optParser.add_option_group(versOpts)
 
    # Tag data options.
    grp1 = OptionGroup(optParser, "Tag Data");
@@ -159,6 +159,12 @@ Run with --help/-h for usage information or see the man page 'eyeD3(1)'
                    dest="genre", metavar="GENRE",
                    help="Set genre. The argument is a valid genre string or "\
                         "number.  See --list-genres");
+   grp1.add_option("-d", "--disc", action="store", type="string",
+                   dest="disc", metavar="NUM",
+                   help="Set disc number")
+   grp1.add_option("-D", "--disc-total", action="store", type="string",
+                   dest="disc_total", metavar="NUM",
+                   help="Set total number of discs")
    grp1.add_option("-Y", "--year", action="store", type="string",
                    dest="year", metavar="STRING",
                    help="Set a four digit year.");
@@ -277,9 +283,14 @@ Run with --help/-h for usage information or see the man page 'eyeD3(1)'
    grp3.add_option("--strict", action="store_true",
                    dest="strict", help="Fail for tags that violate "\
                                        "the ID3 specification.");
+   grp3.add_option("--itunes", action="store_true",
+                   dest="itunes", help="Store tags in an iTunes compatible "
+                                        "way.");
    grp3.add_option("--jep-118", action="store_true", dest="jep_118",
                    help="Output the tag per the format described in JEP-0118. "\
                         "See http://www.xmpp.org/extensions/xep-0118.html");
+   grp3.add_option("--rfc822", action="store_true", dest="rfc822",
+                   help="Output the tag in RFC822-like format");
    grp3.add_option("--nfo", action="store_true", dest="nfo",
                    help="Output NFO information.")
    grp3.add_option("--lametag", action="store_true", dest="lametag",
@@ -495,6 +506,14 @@ class JEP118Driver(TagDriverBase):
            printMsg(xml.encode(ENCODING, "replace"));
            return self.R_CONT;
 
+class Rfc822Driver(TagDriverBase):
+   def handleFile(self, f):
+       TagDriverBase.handleFile(self, f)
+       if self.tag:
+           s = eyeD3.tag.tagToRfc822(self.audioFile or self.tag);
+           printMsg(s.encode(ENCODING, "replace"));
+           return self.R_CONT;
+
 class EyeD3Driver(TagDriverBase):
    def __init__(self, opts):
        TagDriverBase.__init__(self, opts)
@@ -529,27 +548,15 @@ class EyeD3Driver(TagDriverBase):
              printError(ex);
              return self.R_HALT;
 
-         if newTag and not tagModified and not self.opts.convertVersion:
+         if newTag and not tagModified and not self.opts.convert_version:
             return self.R_CONT;
 
          # Handle updating the tag if requested.
-         if tagModified or self.opts.convertVersion:
-            updateVersion = eyeD3.ID3_CURRENT_VERSION;
-            if self.opts.convertVersion:
-               updateVersion = self.opts.convertVersion;
-               v = eyeD3.utils.versionToString(updateVersion);
-               if updateVersion == self.tag.getVersion():
-                  printWarning("No conversion necessary, tag is "\
-                               "already version %s" % v);
-               else:
-                  printWarning("Converting tag to ID3 version %s" % v);
-            elif self.opts.tagVersion != eyeD3.ID3_ANY_VERSION:
-               updateVersion = self.opts.tagVersion;
-
+         if tagModified:
             # Update the tag.
             printWarning("Writing tag...");
             self.tag.do_tdtg = not self.opts.no_tdtg
-            if not self.tag.update(updateVersion):
+            if not self.tag.update():
                printError("Error writing tag: %s" % f);
                return self.R_HALT;
          else:
@@ -606,6 +613,19 @@ class EyeD3Driver(TagDriverBase):
    def handleEdits(self, tag):
       retval = 0;
 
+      # First set new version if requested
+      if self.opts.convert_version:
+          from eyeD3.utils import versionToString
+          new_version = self.opts.convert_version
+          if new_version == self.tag.getVersion():
+              printWarning("No conversion necessary, tag is already %s" %
+                           versionToString(new_version))
+          else:
+              printWarning("Converting tag to ID3 %s" %
+                           versionToString(new_version))
+              tag.setVersion(new_version)
+              retval |= 1
+
       artist = self.opts.artist;
       if artist != None:
          printWarning("Setting artist: %s" % artist);
@@ -623,6 +643,22 @@ class EyeD3Driver(TagDriverBase):
          printWarning("Setting title: %s" % title);
          tag.setTitle(title);
          retval |= 1;
+
+      discNum = self.opts.disc
+      discTotal = self.opts.disc_total
+      if discNum != None or discTotal != None:
+         if discNum:
+            printWarning("Setting disc: %s" % str(discNum))
+            discNum = int(discNum)
+         else:
+            discNum = tag.getDiscNum()[0]
+         if discTotal:
+            printWarning("Setting disc total: %s" % str(discTotal))
+            discTotal = int(discTotal)
+         else:
+            discTotal = tag.getDiscNum()[1]
+         tag.setDiscNum((discNum, discTotal), zeropad = self.opts.zeropad)
+         retval |= 1
 
       trackNum = self.opts.track;
       trackTotal = self.opts.track_total;
@@ -724,7 +760,7 @@ class EyeD3Driver(TagDriverBase):
       elif lyrics:
          for l in lyrics:
             try:
-               (lang,desc,lyrics) = l.split(self.opts.field_delim, 2)
+               (lang, desc, lyrics) = l.split(self.opts.field_delim, 2)
                if not lang:
                   lang = eyeD3.DEFAULT_LANG;
                if not lyrics:
@@ -811,15 +847,15 @@ class EyeD3Driver(TagDriverBase):
               else:
                   if tf_args[1]:
                       printWarning("Setting '%s' TXXX frame to '%s'" %\
-                                   (tf_args[0], tf_args[1]));
+                                   (tf_args[0], tf_args[1]))
                   else:
-                      printWarning("Removing '%s' TXXX frame" % (tf_args[0]));
+                      printWarning("Removing '%s' TXXX frame" % (tf_args[0]))
                   try:
-                      tag.addUserTextFrame(tf_args[0], tf_args[1]);
-                      retval |= 1;
+                      tag.addUserTextFrame(tf_args[0], tf_args[1])
+                      retval |= 1
                   except FrameException, ex:
-                      printError(ex);
-                      retval &= 0;
+                      printError(ex)
+                      retval &= 0
 
       if self.opts.url_frames or self.opts.user_url_frames:
           # Make a list of tuples (is_user_frame, arg)
@@ -960,6 +996,15 @@ class EyeD3Driver(TagDriverBase):
                                            str(genre.getId()));
          printMsg("%s: %s\t\t%s" % (boldText("track"), trackStr, genreStr));
 
+         # TPOS
+         discStr = ""
+         (discNum, discTotal) = tag.getDiscNum()
+         if discNum != None:
+            discStr = str(discNum)
+            if discTotal:
+               discStr += "/%d" % discTotal
+            printMsg("%s: %s" % (boldText("disc"), discStr))
+
          # PCNT
          play_count = tag.getPlayCount();
          if play_count != None:
@@ -1022,12 +1067,12 @@ class EyeD3Driver(TagDriverBase):
                   (boldText("UserTextFrame"), desc,
                    text.encode(ENCODING,"replace"));
 
-         urls = tag.getURLs();
+         urls = tag.getURLs()
          if urls:
-            print "";
+            print ""
          for u in urls:
             if u.header.id != eyeD3.frames.USERURL_FID:
-               print "%s: %s" % (u.header.id, u.url);
+               print "%s: %s" % (u.header.id, u.url)
             else:
                print "%s [Description: %s]: %s" % (u.header.id, u.description,
                                                    u.url)
@@ -1167,6 +1212,8 @@ def main():
    if options.jep_118:
        # Handle --jep-118
        app = JEP118Driver(options);
+   elif options.rfc822:
+       app = Rfc822Driver(options);
    elif options.nfo:
        # Handle --nfo
        app = NFODriver(options);
@@ -1181,6 +1228,9 @@ def main():
        if options.strict:
            # Handle --strict
            eyeD3.utils.STRICT_ID3 = 1;
+       if options.itunes:
+           # Handle --itunes
+           eyeD3.utils.ITUNES_COMPAT = 1
        if options.nocolor:
            # Handle --nocolor
            colors.enabled(0);

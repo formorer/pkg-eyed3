@@ -32,7 +32,7 @@ Source0: %{name}-%{version}.tar.gz
 Packager: %{maintainer}
 BuildRoot: /var/tmp/%{name}-%{version}-buildroot
 
-Requires: python2 >= 2.3
+Requires: python2 >= 2.5
 
 %description
 eyeD3 is a Python module and program for processing ID3 tags.

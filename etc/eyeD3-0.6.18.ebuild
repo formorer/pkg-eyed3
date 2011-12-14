@@ -2,7 +2,7 @@
 # Distributed under the terms of the GNU General Public License v2
 # $Header: /opt/data/files/travis/cvsroot/eyeD3/etc/gentoo/Attic/eyeD3-0.6.12.ebuild,v 1.1.2.1 2007/02/18 23:34:46 travis Exp $
 
-NEED_PYTHON=2.3
+NEED_PYTHON=2.5
 
 inherit distutils
 

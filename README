@@ -1,6 +1,6 @@
-eyeD3 0.6.17
+eyeD3 0.6.18
 Travis Shirk <travis@pobox.com>
-02.01.2009
+11.24.2011
 
 
 General Information
@@ -12,14 +12,15 @@ play time, etc.) is also provided.  The formats supported are ID3
 v1.0/v1.1 (http://id3lib.sourceforge.net/id3/id3v1.html)
 and v2.3/v2.4 (http://id3lib.sourceforge.net/id3/develop.html).
 
-The current stable version is 0.6.17.  It and earlier versions are
+The current stable version is 0.6.18.  It and earlier versions are
 available here (http://eyed3.nicfit.net/releases/).
 
 See the NEWS (NEWS) and/or ChangeLog (ChangeLog) for changes.
 
 Requirements
 ============
- - Python (http://www.python.org/) >= 2.3
+ - Python (http://www.python.org/) >= 2.5
+ - python-magic (http://www.darwinsys.com/file/) optional
 
 Installation
 ============
@@ -27,8 +28,8 @@ Installation
 Source tarball
 --------------
 
-     gzip -dc eyeD3-0.6.17.tar.gz | tar xvf -
-     cd eyeD3-0.6.17
+     gzip -dc eyeD3-0.6.18.tar.gz | tar xvf -
+     cd eyeD3-0.6.18
      ./configure
      make
      make install (as root)
@@ -60,7 +61,7 @@ See linuxpackages.net (http://www.linuxpackages.net/search_view.php?by=name&name
 Solaris SPARC and x86
 ---------------------
 Packages available from
-Blastwave (http://www.blastwave.org/packages.php/pyeyed3).
+Blastwave (http://www.blastwave.org/pkg/search.ftd?qs=pyeyeD3).
 
 How to Use eyeD3
 ================
@@ -102,6 +103,9 @@ best example of how to use the API.  It supports the following features:
       -G GENRE, --genre=GENRE
                           Set genre. The argument is a valid genre string or
                           number.  See --list-genres
+      -d NUM, --disc=NUM  Set disc number
+      -D NUM, --disc-total=NUM
+                          Set total number of discs
       -Y STRING, --year=STRING
                           Set a four digit year.
       -c [LANGUAGE]:[DESCRIPTION]:COMMENT, --comment=[LANGUAGE]:[DESCRIPTION]:COMMENT
@@ -173,8 +177,10 @@ best example of how to use the API.  It supports the following features:
       -l, --list-genres   Display the table of ID3 genres and exit
       --list-image-types  List all possible image types
       --strict            Fail for tags that violate the ID3 specification.
+      --itunes            Store tags in an iTunes compatible way.
       --jep-118           Output the tag per the format described in JEP-0118.
                           See http://www.xmpp.org/extensions/xep-0118.html
+      --rfc822            Output the tag in RFC822-like format
       --nfo               Output NFO information.
       --lametag           Prints the LAME Tag.
       --force-update      Update the tag regardless of whether any frames are set
@@ -270,7 +276,6 @@ eyeD3 is free software, refer to the COPYING (COPYING) file for details.
 
 See the TODO (TODO) file for possible enhancements.
 
-See the THANKS (THANKS) file for a list people who have contributed to eyeD3.
 
 
 
