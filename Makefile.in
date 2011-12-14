@@ -34,6 +34,7 @@ endif
 prefix=@prefix@
 exec_prefix:=@exec_prefix@
 bindir:=$(subst //,/,${DESTDIR}/@bindir@)
+datarootdir:=$(subst //,/,${DESTDIR}/@datarootdir@)
 mandir:=$(subst //,/,${DESTDIR}/@mandir@)
 datadir:=$(subst //,/,${DESTDIR}/@datadir@)
 docdir:=$(subst //,/,${DESTDIR}/@datadir@/doc/${DIST_NAME})
@@ -59,7 +60,6 @@ install:
 	install -m 755 -d ${docdir}
 	install -m 644 README ${docdir}
 	install -m 644 AUTHORS ${docdir}
-	install -m 644 THANKS ${docdir}
 	install -m 644 COPYING ${docdir}
 	gzip -f -9 ${docdir}/COPYING
 	install -m 644 ChangeLog ${docdir}
@@ -97,7 +97,7 @@ maintainer-clean: docs-clean
 dist: docs dist-clean
 	mkdir ${DIST_NAME}
 	cp ChangeLog AUTHORS COPYING README README.html TODO NEWS\
-	   THANKS INSTALL ${DIST_NAME}
+	   INSTALL ${DIST_NAME}
 	cp acsite.m4 configure setup.py.in Makefile.in ${DIST_NAME}
 
 	mkdir ${DIST_NAME}/etc
@@ -164,11 +164,15 @@ docs-clean:
 	-rm README
 	-rm README.html
 
+patch-clean:
+	find . -name \*.rej | xargs rm
+	find . -name \*.orig | xargs rm
+
 www:
 	-rm -rf ./www
 	-mkdir -p www/eyeD3/releases
 	-mkdir www/eyeD3/releases/gentoo
-	cp README.html ChangeLog COPYING NEWS TODO THANKS www/eyeD3
+	cp README.html ChangeLog COPYING NEWS TODO www/eyeD3
 	cd www/eyeD3 && ln -s README.html index.html
 	cp ${DIST_GZ} www/eyeD3/releases
 	cp etc/gentoo/eyeD3-${EBUILD_VERSION}.ebuild www/eyeD3/releases/gentoo
