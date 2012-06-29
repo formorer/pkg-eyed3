@@ -1,3 +1,12 @@
+eyed3 (0.6.18-1) unstable; urgency=low
+
+  * [f253d6f] Imported Upstream version 0.6.18
+    - Fix jep output (Closes: #527639)
+  * [8c97a4a] Remove 01_handle_empty_BPM_tag (now upstream)
+  * [c94349c] Move section to python
+
+ -- Alexander Wirt <formorer@debian.org>  Fri, 29 Jun 2012 23:45:00 +0200
+
 eyed3 (0.6.17-3) unstable; urgency=low
 
   * [0f7fbec] Fix override disparity
