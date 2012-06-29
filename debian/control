@@ -1,5 +1,5 @@
 Source: eyed3
-Section: sound
+Section: python
 Priority: optional
 Maintainer: Alexander Wirt <formorer@debian.org>
 Build-Depends: debhelper (>= 8), dpatch (>= 2.0.32~)
@@ -22,6 +22,7 @@ Description: Python module for id3-tags manipulation
 
 Package: eyed3
 Architecture: all
+Section: sound
 Depends: python-eyed3 (= ${source:Version}), ${python:Depends},
  ${misc:Depends}
 Description: Display and manipulate id3-tags on the command-line
