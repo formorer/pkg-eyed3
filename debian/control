@@ -10,7 +10,7 @@ X-Python-Version: >=2.6
 
 Package: python-eyed3
 Architecture: all
-Section: sound
+Section: python
 Depends: ${python:Depends}, ${misc:Depends}
 Provides: ${python:Provides}
 Replaces: python2.3-eyed3, python2.4-eyed3
